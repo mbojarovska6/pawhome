@@ -1,0 +1,16 @@
+{
+  "name": "pawhome-backend",
+  "version": "1.0.0",
+  "description": "Express REST API for the PawHome pet adoption app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^9.9.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "pg": "^8.16.0"
+  }
+}
