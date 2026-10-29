@@ -16,22 +16,6 @@ app.get('/api/health', async (req, res, next) => {
   }
 });
 
-// Row counts per table, shown on the frontend's dashboard.
-app.get('/api/stats', async (req, res, next) => {
-  try {
-    const { rows } = await pool.query(`
-      SELECT
-        (SELECT COUNT(*)::int FROM shelters)     AS shelters,
-        (SELECT COUNT(*)::int FROM adopters)     AS adopters,
-        (SELECT COUNT(*)::int FROM animals)      AS animals,
-        (SELECT COUNT(*)::int FROM applications) AS applications,
-        (SELECT COUNT(*)::int FROM animals WHERE status = 'available')    AS available_animals,
-        (SELECT COUNT(*)::int FROM applications WHERE status = 'pending') AS pending_applications`);
-    res.json(rows[0]);
-  } catch (err) {
-    next(err);
-  }
-});
 
 app.use('/api/shelters', require('./routes/shelters'));
 app.use('/api/animals', require('./routes/animals'));
