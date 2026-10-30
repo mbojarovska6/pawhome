@@ -214,6 +214,14 @@ async function main() {
         WHEN EXISTS (SELECT 1 FROM applications ap WHERE ap.animal_id = animals.id AND ap.status = 'approved') THEN 'reserved'
         ELSE 'available' END`);
 
+        // Apply the migrations (Task 2 added updated_at). They run AFTER the data is
+    // inserted, so updated_at gets each row's real date instead of "now" for all.
+    console.log('Applying migrations...');
+    const migrationsDir = path.join(__dirname, 'migrations');
+    for (const file of fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort()) {
+      await client.query(fs.readFileSync(path.join(migrationsDir, file), 'utf8'));
+    }
+    
     await client.query('COMMIT');
 
     console.log('\nDone. Rows per table:');
