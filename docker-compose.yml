@@ -34,5 +34,56 @@ services:
     depends_on:
       - backend
 
+  silo:                                  # main lake: Silo, S3-compatible object storage
+    image: pgsty/silo:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: silo-admin        # login for the web console = S3 access key
+      MINIO_ROOT_PASSWORD: silo-password-123
+    ports:
+      - "9000:9000"                      # S3 API (used by dlt)
+      - "9001:9001"                      # web console (http://localhost:9001)
+    volumes:
+      - silo-data:/data
+
+  rustfs:                                # bonus: additional lake in another S3-compatible store
+    image: rustfs/rustfs:latest
+    command: /data
+    environment:
+      RUSTFS_ACCESS_KEY: rustfs-admin
+      RUSTFS_SECRET_KEY: rustfs-password-123
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+    ports:
+      - "9100:9000"                      # S3 API on your laptop: 9100 (9000 is taken by Silo)
+      - "9101:9001"                      # web console (http://localhost:9101)
+    volumes:
+      - rustfs-data:/data
+
+  jupyter:                               # JupyterLab with dlt, where the notebooks run
+    build: ./lake
+    environment:
+      JUPYTER_TOKEN: pawhome             # password to open JupyterLab
+      POSTGRES_URL: postgresql+psycopg2://pawhome:pawhome@db:5432/pawhome
+      SILO_ENDPOINT: http://silo:9000
+      SILO_ACCESS_KEY: silo-admin
+      SILO_SECRET_KEY: silo-password-123
+      SILO_BUCKET: pawhome-lake
+      RUSTFS_ENDPOINT: http://rustfs:9000
+      RUSTFS_ACCESS_KEY: rustfs-admin
+      RUSTFS_SECRET_KEY: rustfs-password-123
+      RUSTFS_BUCKET: pawhome-lake
+    ports:
+      - "8888:8888"                      # JupyterLab (http://localhost:8888)
+    volumes:
+      - ./lake/notebooks:/home/jovyan/work   # notebooks are saved in your project folder
+    depends_on:
+      db:
+        condition: service_healthy
+      silo:
+        condition: service_started
 volumes:
   pgdata:
+  silo-data:
+  rustfs-data:

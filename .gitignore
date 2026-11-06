@@ -3,3 +3,6 @@ dist/
 .env
 *.log
 .DS_Store
+.ipynb_checkpoints/
+__pycache__/
+lake/notebooks/.dlt_pipelines/
