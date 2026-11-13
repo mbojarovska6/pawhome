@@ -36,13 +36,17 @@ module.exports = crudRouter({
   filters: { status: 'ap.status', animal_id: 'ap.animal_id', adopter_id: 'ap.adopter_id' },
   orderBy: 'ap.submitted_at DESC',
 
-  // Set decided_at automatically when the status leaves or returns to 'pending'.
+  // Set submitted_at / decided_at automatically.
   beforeWrite(data, before) {
+    const now = new Date();
+    // New application: stamp submitted_at with the same clock as decided_at,
+    // so the rule "decided_at >= submitted_at" can never fail.
+    if (!before) data.submitted_at = now;
     if (data.status === undefined) return data;
     if (data.status === 'pending') {
       data.decided_at = null;
-    } else if (!before || before.status === 'pending' || before.status !== data.status) {
-      data.decided_at = new Date();
+    } else if (!before || before.status !== data.status) {
+      data.decided_at = now;
     }
     return data;
   },

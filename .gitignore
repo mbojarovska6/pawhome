@@ -6,3 +6,4 @@ dist/
 .ipynb_checkpoints/
 __pycache__/
 lake/notebooks/.dlt_pipelines/
+lake/notebooks/pile_catalog/

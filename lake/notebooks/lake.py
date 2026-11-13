@@ -47,11 +47,14 @@ LAKES = {
     },
 }
 
+# Connection string for the PawHome PostgreSQL database (service "db" in docker-compose).
 # "postgresql+psycopg2" = PostgreSQL, using the psycopg2 driver (installed from requirements.txt).
 POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql+psycopg2://pawhome:pawhome@db:5432/pawhome")
 
 # The four tables of the operational database.
 DB_TABLES = ["shelters", "adopters", "animals", "applications"]
+
+
 def lake_destination(lake: str = "silo"):
     """Return a dlt 'filesystem' destination that writes into the chosen lake's bucket."""
     cfg = LAKES[lake]
@@ -65,6 +68,7 @@ def lake_destination(lake: str = "silo"):
         },
         layout=LAYOUT,
     )
+
 
 def add_metadata(resource, source_system: str, source_resource: str, ingestion_type: str):
     """
@@ -88,6 +92,7 @@ def add_metadata(resource, source_system: str, source_resource: str, ingestion_t
     resource.add_map(_add)
     return resource
 
+
 # ---------------------------------------------------------------------------
 # 3. Helpers to LOOK at the lake from the notebook
 # ---------------------------------------------------------------------------
@@ -99,6 +104,7 @@ def _fs(lake: str = "silo") -> s3fs.S3FileSystem:
         client_kwargs={"endpoint_url": cfg["endpoint"]},
     )
 
+
 def ensure_bucket(lake: str):
     """Create the lake's bucket if it doesn't exist yet (used for the RustFS lake)."""
     fs = _fs(lake)
@@ -108,6 +114,7 @@ def ensure_bucket(lake: str):
         print(f"Created bucket {bucket} in {lake}")
     else:
         print(f"Bucket {bucket} already exists in {lake}")
+
 
 def list_lake(prefix: str = "", lake: str = "silo", only_parquet: bool = True) -> pd.DataFrame:
     """List the objects in the lake under a prefix, e.g. list_lake('postgres/animals')."""
@@ -123,6 +130,7 @@ def list_lake(prefix: str = "", lake: str = "silo", only_parquet: bool = True) -
                      "last_modified": info.get("LastModified")})
     df = pd.DataFrame(rows, columns=["key", "size_kb", "last_modified"])
     return df.sort_values("key").reset_index(drop=True)
+
 
 def read_lake(prefix: str, lake: str = "silo") -> pd.DataFrame:
     """Read ALL parquet files under a prefix into one pandas DataFrame."""

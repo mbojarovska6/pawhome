@@ -1,4 +1,5 @@
 services:
+  # ---------------- Task 1: the application ----------------
   db:
     image: postgres:16
     environment:
@@ -34,6 +35,7 @@ services:
     depends_on:
       - backend
 
+  # ---------------- Task 2: the data lake ----------------
   silo:                                  # main lake: Silo, S3-compatible object storage
     image: pgsty/silo:latest
     command: server /data --console-address ":9001"
@@ -74,6 +76,9 @@ services:
       RUSTFS_ACCESS_KEY: rustfs-admin
       RUSTFS_SECRET_KEY: rustfs-password-123
       RUSTFS_BUCKET: pawhome-lake
+      # Task 3: the data pile (Iceberg tables) – one more bucket in each store
+      SILO_PILE_BUCKET: pawhome-pile
+      RUSTFS_PILE_BUCKET: pawhome-pile
     ports:
       - "8888:8888"                      # JupyterLab (http://localhost:8888)
     volumes:
@@ -83,6 +88,9 @@ services:
         condition: service_healthy
       silo:
         condition: service_started
+      rustfs:
+        condition: service_started
+
 volumes:
   pgdata:
   silo-data:
