@@ -7,3 +7,7 @@ dist/
 __pycache__/
 lake/notebooks/.dlt_pipelines/
 lake/notebooks/pile_catalog/
+lake/notebooks/inspect_tmp/
+spark-warehouse/
+metastore_db/
+derby.log

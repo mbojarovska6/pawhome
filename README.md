@@ -113,3 +113,26 @@ docker compose up -d --build jupyter   # rebuild JupyterLab once (adds PyIceberg
 - Object keys: `bronze/<table>/data/ingestion_date=<YYYY-MM-DD>/<file>.parquet` and `bronze/<table>/metadata/...`
 - Partitioning: `ingestion_date = day(_ingested_at)`.
 - Shared settings and helpers: `lake/notebooks/pile.py`.
+
+---
+
+# Task 4 – Batch processing with Spark
+
+JupyterLab now also has **Java + PySpark 4.0.1** (Spark in local mode). Rebuild it once:
+
+```bash
+docker compose up -d --build jupyter
+```
+
+The first Spark start downloads `spark-avro` and `hadoop-aws` from Maven (internet needed, ~1 minute). Spark UI: http://localhost:4040
+
+| Notebook | Task part | What |
+|---|---|---|
+| `07_spark_file_formats.ipynb` | 1 | full-load Parquet → CSV / JSON / Avro / Parquet with compression + partitioning, sizes, schema/content comparison, inside Avro and Parquet (`file_inspect.py`) |
+| `08_spark_medallion.ipynb` | 2 | bronze → silver (cleaning, incremental upsert, time travel) → gold (joins, partition specs, example queries) |
+| `09_spark_ml_classification.ipynb` | 3 | classification "will the animal find a home?" (Spark MLlib), metrics, predictions → `gold.found_home_predictions` |
+
+- Spark does the processing; PyIceberg reads/writes the Iceberg tables in the same SQLite catalog (`lake/notebooks/spark_pile.py`).
+- Silver: `silver.shelters`, `silver.adopters`, `silver.animals`, `silver.applications`, `silver.dog_breeds`
+- Gold: `gold.shelter_monthly_activity` (partition `month(month_start)`), `gold.breed_popularity` (partition `species`), `gold.found_home_predictions`
+- Order: run notebooks 04 → 05 → 06 (Task 3) first, then 07 → 08 → 09.
