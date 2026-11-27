@@ -81,6 +81,7 @@ services:
       RUSTFS_PILE_BUCKET: pawhome-pile
     ports:
       - "8888:8888"                      # JupyterLab (http://localhost:8888)
+      - "4040:4040"                      # Spark UI while a Spark session runs (Task 4)
     volumes:
       - ./lake/notebooks:/home/jovyan/work   # notebooks are saved in your project folder
     depends_on:

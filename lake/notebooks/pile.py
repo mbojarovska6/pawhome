@@ -170,3 +170,29 @@ def data_files(table, snapshot_id=None) -> pd.DataFrame:
     df = files.select(["file_path", "record_count", "file_size_in_bytes"]).to_pandas()
     df["file_path"] = df["file_path"].str.replace(f"s3://{table.location().split('/')[2]}/", "", regex=False)
     return df
+
+
+# ---------------------------------------------------------------------------
+# 3. The bronze incremental load as one function (used again in Task 4, notebook 08)
+#    = the same thing notebook 05 does step by step.
+# ---------------------------------------------------------------------------
+def run_bronze_incremental(pile: str = "silo") -> None:
+    """Incremental dlt load PostgreSQL -> bronze.postgres_<table> (append on updated_at)."""
+    from dlt.sources.sql_database import sql_table
+    from lake import POSTGRES_URL, DB_TABLES, PIPELINES_DIR, add_metadata
+
+    resources = []
+    for name in DB_TABLES:
+        r = sql_table(POSTGRES_URL, table=name, incremental=dlt.sources.incremental("updated_at"))
+        r.apply_hints(table_name=f"postgres_{name}")
+        add_metadata(r, source_system="postgres", source_resource=name, ingestion_type="incremental")
+        partition_by_ingestion_date(r)
+        resources.append(r)
+
+    pipeline = dlt.pipeline(
+        pipeline_name="pile_incremental" if pile == "silo" else f"pile_incremental_{pile}",
+        destination=pile_destination(pile),
+        dataset_name=BRONZE,
+        pipelines_dir=PIPELINES_DIR,
+    )
+    run_to_pile(pipeline, resources, write_disposition="append", pile=pile)

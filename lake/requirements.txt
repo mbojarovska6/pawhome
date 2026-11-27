@@ -1,3 +1,6 @@
 dlt[filesystem,parquet,sql_database,pyiceberg]>=1.31,<2
 pyiceberg[sql-sqlite]>=0.10
 psycopg2-binary>=2.9
+# Task 4
+pyspark==4.0.1
+fastavro>=1.9
