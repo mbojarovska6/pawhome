@@ -79,6 +79,11 @@ services:
       # Task 3: the data pile (Iceberg tables) – one more bucket in each store
       SILO_PILE_BUCKET: pawhome-pile
       RUSTFS_PILE_BUCKET: pawhome-pile
+      # Task 5: Trino + Metabase (test login of the local Metabase, created by notebook 11)
+      TRINO_HOST: trino-coordinator
+      METABASE_URL: http://metabase:3000
+      MB_ADMIN_EMAIL: admin@pawhome.local
+      MB_ADMIN_PASSWORD: PawHome-metabase-2026
     ports:
       - "8888:8888"                      # JupyterLab (http://localhost:8888)
       - "4040:4040"                      # Spark UI while a Spark session runs (Task 4)
@@ -92,7 +97,58 @@ services:
       rustfs:
         condition: service_started
 
+  # ---------------- Task 5: Trino cluster + Metabase ----------------
+  trino-coordinator:                     # receives and plans queries, hosts the web UI
+    build: ./trino
+    ports:
+      - "8080:8080"                      # Trino web UI: http://localhost:8080/ui/
+    volumes:
+      - ./trino/etc/coordinator/config.properties:/etc/trino/config.properties:ro
+      - ./trino/etc/coordinator/node.properties:/etc/trino/node.properties:ro
+      - ./trino/catalog:/etc/trino/catalog:ro             # pawhome_db + pile catalogs
+      - ./lake/notebooks/pile_catalog:/pile_catalog       # the SQLite Iceberg catalog (Task 3)
+    mem_limit: 1200m
+    depends_on:
+      db:
+        condition: service_healthy
+      silo:
+        condition: service_started
+
+  trino-worker-1:                        # executes the work (reads data, joins, aggregates)
+    build: ./trino
+    volumes:
+      - ./trino/etc/worker/config.properties:/etc/trino/config.properties:ro
+      - ./trino/etc/worker-1/node.properties:/etc/trino/node.properties:ro
+      - ./trino/catalog:/etc/trino/catalog:ro
+      - ./lake/notebooks/pile_catalog:/pile_catalog
+    mem_limit: 1200m
+    depends_on:
+      - trino-coordinator
+
+  trino-worker-2:
+    build: ./trino
+    volumes:
+      - ./trino/etc/worker/config.properties:/etc/trino/config.properties:ro
+      - ./trino/etc/worker-2/node.properties:/etc/trino/node.properties:ro
+      - ./trino/catalog:/etc/trino/catalog:ro
+      - ./lake/notebooks/pile_catalog:/pile_catalog
+    mem_limit: 1200m
+    depends_on:
+      - trino-coordinator
+
+  metabase:                              # business analytics / dashboards
+    image: metabase/metabase:latest
+    environment:
+      MB_DB_FILE: /metabase-data/metabase.db   # Metabase's own settings (users, dashboards)
+    ports:
+      - "3001:3000"                      # http://localhost:3001 (3000 is the PawHome backend)
+    volumes:
+      - metabase-data:/metabase-data
+    depends_on:
+      - trino-coordinator
+
 volumes:
   pgdata:
   silo-data:
   rustfs-data:
+  metabase-data:

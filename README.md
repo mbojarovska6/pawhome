@@ -136,3 +136,24 @@ The first Spark start downloads `spark-avro` and `hadoop-aws` from Maven (intern
 - Silver: `silver.shelters`, `silver.adopters`, `silver.animals`, `silver.applications`, `silver.dog_breeds`
 - Gold: `gold.shelter_monthly_activity` (partition `month(month_start)`), `gold.breed_popularity` (partition `species`), `gold.found_home_predictions`
 - Order: run notebooks 04 → 05 → 06 (Task 3) first, then 07 → 08 → 09.
+
+---
+
+# Task 5 – Interactive queries with Trino + Metabase
+
+| Service | URL | Login |
+|---|---|---|
+| Trino UI (coordinator) | http://localhost:8080/ui/ | any username, no password |
+| Metabase | http://localhost:3001 | `admin@pawhome.local` / `PawHome-metabase-2026` (test login, created by notebook 11) |
+
+```bash
+docker compose up -d --build     # builds Trino (+ SQLite driver) and rebuilds JupyterLab (+ trino client)
+```
+
+- Cluster: `trino-coordinator` + `trino-worker-1` + `trino-worker-2` (configs in `trino/etc/`).
+- Catalogs (`trino/catalog/`): `pawhome_db` → PostgreSQL; `pile` → Iceberg tables in Silo, read through the same SQLite catalog as PyIceberg (`lake/notebooks/pile_catalog/pawhome_silo.db`).
+
+| Notebook | Task part |
+|---|---|
+| `10_trino_queries.ipynb` | 1–3: nodes, catalogs, DB + pile queries, old snapshot, partition pruning, federated query + pushdown |
+| `11_metabase_dashboard.ipynb` | 4: Metabase admin, Trino connection, 3 questions + dashboard on `gold` |
